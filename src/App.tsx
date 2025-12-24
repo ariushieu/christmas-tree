@@ -783,8 +783,8 @@ const GestureController = ({ onGesture, onMove, onStatus, onPinch, onUnpinch, sc
               if (debugMode) onStatus(`DETECTED: ${name}`);
             }
             if (results.landmarks.length > 0) {
-              const speed = (0.5 - results.landmarks[0][0].x) * 0.15;
-              onMove(Math.abs(speed) > 0.01 ? speed : 0);
+              const speed = (0.5 - results.landmarks[0][0].x) * 2.0;
+              onMove(Math.abs(speed) > 0.005 ? speed : 0);
             }
           } else {
             onMove(0);
@@ -1043,7 +1043,7 @@ export default function GrandTreeApp() {
             backdropFilter: "blur(4px)",
           }}
         >
-          {debugMode ? "HIDE DEBUG" : "🛠 DEBUG"}
+          {debugMode ? "HIDE CAMERA" : "CAMERA"}
         </button>
         <button
           onClick={() =>
