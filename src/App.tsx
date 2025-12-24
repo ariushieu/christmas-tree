@@ -1,4 +1,11 @@
-import { useState, useMemo, useRef, useEffect, Suspense, useCallback } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  Suspense,
+  useCallback,
+} from "react";
 import { Canvas, useFrame, extend } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -24,10 +31,10 @@ import {
 const TOTAL_NUMBERED_PHOTOS = 31;
 // 修改：将 top.jpg 加入到数组开头
 const bodyPhotoPaths = [
-  "/photos/top.jpg",
+  "photos/top.jpg",
   ...Array.from(
     { length: TOTAL_NUMBERED_PHOTOS },
-    (_, i) => `/photos/${i + 1}.jpg`
+    (_, i) => `photos/${i + 1}.jpg`
   ),
 ];
 
@@ -685,7 +692,15 @@ const Experience = ({
 
 // --- Gesture Controller ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GestureController = ({ onGesture, onMove, onStatus, onPinch, onUnpinch, sceneState, debugMode }: any) => {
+const GestureController = ({
+  onGesture,
+  onMove,
+  onStatus,
+  onPinch,
+  onUnpinch,
+  sceneState,
+  debugMode,
+}: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPinchTriggerRef = useRef<number>(0);
@@ -795,33 +810,48 @@ const GestureController = ({ onGesture, onMove, onStatus, onPinch, onUnpinch, sc
           // Only allow pinch when tree is scattered (CHAOS mode) AND fingers are extended
           if (results.landmarks && results.landmarks.length > 0) {
             const lm = results.landmarks[0];
-            const thumb = lm[4];  // Thumb tip
-            const index = lm[8];  // Index finger tip
+            const thumb = lm[4]; // Thumb tip
+            const index = lm[8]; // Index finger tip
             const wrist = lm[0];
             const middleMCP = lm[9]; // Middle finger knuckle
 
             // Calculate hand size for normalization
-            const handSize = Math.hypot(middleMCP.x - wrist.x, middleMCP.y - wrist.y);
+            const handSize = Math.hypot(
+              middleMCP.x - wrist.x,
+              middleMCP.y - wrist.y
+            );
             if (handSize > 0.02) {
               // Calculate finger extension ratio (to distinguish from fist)
               const tips = [lm[8], lm[12], lm[16], lm[20]];
               let avgTipDist = 0;
-              tips.forEach(t => avgTipDist += Math.hypot(t.x - wrist.x, t.y - wrist.y));
+              tips.forEach(
+                (t) => (avgTipDist += Math.hypot(t.x - wrist.x, t.y - wrist.y))
+              );
               avgTipDist /= 4;
               const extensionRatio = avgTipDist / handSize;
 
               // Calculate pinch distance and ratio
-              const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+              const pinchDist = Math.hypot(
+                thumb.x - index.x,
+                thumb.y - index.y
+              );
               const pinchRatio = pinchDist / handSize;
 
               // Pinch detected when:
               // - pinchRatio < 0.35 (thumb touching index)
               // - extensionRatio > 1.5 (fingers extended, NOT a fist)
               // - sceneState is CHAOS (tree scattered)
-              if (pinchRatio < 0.35 && extensionRatio > 1.5 && sceneStateRef.current === "CHAOS") {
+              if (
+                pinchRatio < 0.35 &&
+                extensionRatio > 1.5 &&
+                sceneStateRef.current === "CHAOS"
+              ) {
                 const now = Date.now();
                 // Debounce: only trigger once every 1.5 seconds
-                if (!isPinchingRef.current && now - lastPinchTriggerRef.current > 1500) {
+                if (
+                  !isPinchingRef.current &&
+                  now - lastPinchTriggerRef.current > 1500
+                ) {
                   lastPinchTriggerRef.current = now;
                   isPinchingRef.current = true;
                   onPinch();
@@ -1114,7 +1144,9 @@ export default function GrandTreeApp() {
             justifyContent: "center",
             zIndex: 1000,
             cursor: "pointer",
-            animation: isClosing ? "fadeOut 0.4s ease-out forwards" : "fadeIn 0.3s ease-out",
+            animation: isClosing
+              ? "fadeOut 0.4s ease-out forwards"
+              : "fadeIn 0.3s ease-out",
           }}
         >
           {/* Snowflakes decoration */}
@@ -1159,8 +1191,8 @@ export default function GrandTreeApp() {
                 0 25px 50px rgba(0, 0, 0, 0.5)
               `,
               cursor: "default",
-              animation: isClosing 
-                ? "polaroidOut 0.4s ease-out forwards" 
+              animation: isClosing
+                ? "polaroidOut 0.4s ease-out forwards"
                 : "polaroidIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
               transform: "rotate(-2deg)",
               position: "relative",
@@ -1171,8 +1203,6 @@ export default function GrandTreeApp() {
               justifyContent: "center",
             }}
           >
-
-
             <img
               src={CONFIG.photos.body[selectedPhoto]}
               alt="Enlarged photo"
