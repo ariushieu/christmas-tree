@@ -885,6 +885,16 @@ export default function GrandTreeApp() {
   const [aiStatus, setAiStatus] = useState("INITIALIZING...");
   const [debugMode, setDebugMode] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // Helper to close with animation
+  const closeWithAnimation = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setSelectedPhoto(null);
+      setIsClosing(false);
+    }, 400);
+  }, []);
 
   // Handle pinch gesture - show random photo modal (only in CHAOS mode)
   const handlePinch = useCallback(() => {
@@ -897,15 +907,15 @@ export default function GrandTreeApp() {
 
   // Handle unpinch gesture - close modal
   const handleUnpinch = useCallback(() => {
-    setSelectedPhoto(null);
-  }, []);
+    closeWithAnimation();
+  }, [closeWithAnimation]);
 
   const handlePhotoClick = (index: number) => {
     setSelectedPhoto(index);
   };
 
   const closeLightbox = () => {
-    setSelectedPhoto(null);
+    closeWithAnimation();
   };
 
   return (
@@ -1098,13 +1108,13 @@ export default function GrandTreeApp() {
             left: 0,
             width: "100vw",
             height: "100vh",
-            backgroundColor: "rgba(0, 20, 10, 0.95)",
+            backgroundColor: "rgba(0, 0, 0, 0.95)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
             cursor: "pointer",
-            animation: "fadeIn 0.3s ease-out",
+            animation: isClosing ? "fadeOut 0.4s ease-out forwards" : "fadeIn 0.3s ease-out",
           }}
         >
           {/* Snowflakes decoration */}
@@ -1149,7 +1159,9 @@ export default function GrandTreeApp() {
                 0 25px 50px rgba(0, 0, 0, 0.5)
               `,
               cursor: "default",
-              animation: "polaroidIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              animation: isClosing 
+                ? "polaroidOut 0.4s ease-out forwards" 
+                : "polaroidIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
               transform: "rotate(-2deg)",
               position: "relative",
             }}
@@ -1249,13 +1261,31 @@ export default function GrandTreeApp() {
           to { opacity: 1; }
         }
         @keyframes polaroidIn {
-          from {
+          0% {
             opacity: 0;
-            transform: scale(0.3) rotate(-15deg) translateY(100px);
+            transform: scale(0.5) translateY(50px);
           }
-          to {
+          70% {
+            opacity: 1;
+            transform: scale(1.05) translateY(-10px);
+          }
+          100% {
             opacity: 1;
             transform: scale(1) rotate(-2deg) translateY(0);
+          }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes polaroidOut {
+          0% {
+            opacity: 1;
+            transform: scale(1) rotate(-2deg);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(0.5) translateY(50px);
           }
         }
         @keyframes snowfall {
