@@ -1164,36 +1164,14 @@ export default function GrandTreeApp() {
                 : "polaroidIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
               transform: "rotate(-2deg)",
               position: "relative",
+              minWidth: "250px",
+              minHeight: "200px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            {/* Christmas ribbon */}
-            <div
-              style={{
-                position: "absolute",
-                top: "-15px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "60px",
-                height: "30px",
-                background: "linear-gradient(135deg, #D32F2F, #B71C1C)",
-                borderRadius: "4px 4px 0 0",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "-10px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: 0,
-                  height: 0,
-                  borderLeft: "15px solid transparent",
-                  borderRight: "15px solid transparent",
-                  borderTop: "15px solid #B71C1C",
-                }}
-              />
-            </div>
+
 
             <img
               src={CONFIG.photos.body[selectedPhoto]}
