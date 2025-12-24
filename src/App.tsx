@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, Suspense } from "react";
+import { useState, useMemo, useRef, useEffect, Suspense, useCallback } from "react";
 import { Canvas, useFrame, extend } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -685,9 +685,11 @@ const Experience = ({
 
 // --- Gesture Controller ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GestureController = ({ onGesture, onMove, onStatus, debugMode }: any) => {
+const GestureController = ({ onGesture, onMove, onStatus, onPinch, onUnpinch, sceneState, debugMode }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastPinchTriggerRef = useRef<number>(0);
+  const isPinchingRef = useRef<boolean>(false);
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
@@ -765,6 +767,7 @@ const GestureController = ({ onGesture, onMove, onStatus, debugMode }: any) => {
               canvasRef.current.height
             );
 
+          // Process gestures (Open_Palm, Closed_Fist)
           if (results.gestures.length > 0) {
             const name = results.gestures[0][0].categoryName;
             const score = results.gestures[0][0].score;
@@ -781,13 +784,58 @@ const GestureController = ({ onGesture, onMove, onStatus, debugMode }: any) => {
             onMove(0);
             if (debugMode) onStatus("AI READY: NO HAND");
           }
+
+          // Pinch detection using landmarks (thumb tip + index tip)
+          // Only allow pinch when tree is scattered (CHAOS mode) AND fingers are extended
+          if (results.landmarks && results.landmarks.length > 0) {
+            const lm = results.landmarks[0];
+            const thumb = lm[4];  // Thumb tip
+            const index = lm[8];  // Index finger tip
+            const wrist = lm[0];
+            const middleMCP = lm[9]; // Middle finger knuckle
+
+            // Calculate hand size for normalization
+            const handSize = Math.hypot(middleMCP.x - wrist.x, middleMCP.y - wrist.y);
+            if (handSize > 0.02) {
+              // Calculate finger extension ratio (to distinguish from fist)
+              const tips = [lm[8], lm[12], lm[16], lm[20]];
+              let avgTipDist = 0;
+              tips.forEach(t => avgTipDist += Math.hypot(t.x - wrist.x, t.y - wrist.y));
+              avgTipDist /= 4;
+              const extensionRatio = avgTipDist / handSize;
+
+              // Calculate pinch distance and ratio
+              const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+              const pinchRatio = pinchDist / handSize;
+
+              // Pinch detected when:
+              // - pinchRatio < 0.35 (thumb touching index)
+              // - extensionRatio > 1.5 (fingers extended, NOT a fist)
+              // - sceneState is CHAOS (tree scattered)
+              if (pinchRatio < 0.35 && extensionRatio > 1.5 && sceneState === "CHAOS") {
+                const now = Date.now();
+                // Debounce: only trigger once every 1.5 seconds
+                if (!isPinchingRef.current && now - lastPinchTriggerRef.current > 1500) {
+                  lastPinchTriggerRef.current = now;
+                  isPinchingRef.current = true;
+                  onPinch();
+                  if (debugMode) onStatus("PINCH DETECTED!");
+                }
+              } else if (pinchRatio >= 0.5 && isPinchingRef.current) {
+                // Unpinch detected - close modal
+                isPinchingRef.current = false;
+                onUnpinch();
+                if (debugMode) onStatus("UNPINCH - MODAL CLOSED");
+              }
+            }
+          }
         }
         requestRef = requestAnimationFrame(predictWebcam);
       }
     };
     setup();
     return () => cancelAnimationFrame(requestRef);
-  }, [onGesture, onMove, onStatus, debugMode]);
+  }, [onGesture, onMove, onStatus, onPinch, onUnpinch, sceneState, debugMode]);
 
   return (
     <>
@@ -831,6 +879,20 @@ export default function GrandTreeApp() {
   const [aiStatus, setAiStatus] = useState("INITIALIZING...");
   const [debugMode, setDebugMode] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+
+  // Handle pinch gesture - show random photo modal (only in CHAOS mode)
+  const handlePinch = useCallback(() => {
+    const totalPhotos = CONFIG.photos.body.length;
+    if (totalPhotos > 0) {
+      const randomIndex = Math.floor(Math.random() * totalPhotos);
+      setSelectedPhoto(randomIndex);
+    }
+  }, []);
+
+  // Handle unpinch gesture - close modal
+  const handleUnpinch = useCallback(() => {
+    setSelectedPhoto(null);
+  }, []);
 
   const handlePhotoClick = (index: number) => {
     setSelectedPhoto(index);
@@ -876,6 +938,9 @@ export default function GrandTreeApp() {
         onGesture={setSceneState}
         onMove={setRotationSpeed}
         onStatus={setAiStatus}
+        onPinch={handlePinch}
+        onUnpinch={handleUnpinch}
+        sceneState={sceneState}
         debugMode={debugMode}
       />
 
