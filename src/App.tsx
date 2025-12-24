@@ -690,6 +690,12 @@ const GestureController = ({ onGesture, onMove, onStatus, onPinch, onUnpinch, sc
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPinchTriggerRef = useRef<number>(0);
   const isPinchingRef = useRef<boolean>(false);
+  const sceneStateRef = useRef(sceneState);
+
+  // Keep ref in sync with prop without triggering useEffect re-run
+  useEffect(() => {
+    sceneStateRef.current = sceneState;
+  }, [sceneState]);
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
@@ -812,7 +818,7 @@ const GestureController = ({ onGesture, onMove, onStatus, onPinch, onUnpinch, sc
               // - pinchRatio < 0.35 (thumb touching index)
               // - extensionRatio > 1.5 (fingers extended, NOT a fist)
               // - sceneState is CHAOS (tree scattered)
-              if (pinchRatio < 0.35 && extensionRatio > 1.5 && sceneState === "CHAOS") {
+              if (pinchRatio < 0.35 && extensionRatio > 1.5 && sceneStateRef.current === "CHAOS") {
                 const now = Date.now();
                 // Debounce: only trigger once every 1.5 seconds
                 if (!isPinchingRef.current && now - lastPinchTriggerRef.current > 1500) {
@@ -835,7 +841,7 @@ const GestureController = ({ onGesture, onMove, onStatus, onPinch, onUnpinch, sc
     };
     setup();
     return () => cancelAnimationFrame(requestRef);
-  }, [onGesture, onMove, onStatus, onPinch, onUnpinch, sceneState, debugMode]);
+  }, [onGesture, onMove, onStatus, onPinch, onUnpinch, debugMode]);
 
   return (
     <>
